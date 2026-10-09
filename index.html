@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JSON 节点格式化 · JSON Node Formatter</title>
+<meta name="description" content="右键页面任意节点，把其中的 JSON 格式化为可折叠、可搜索、可编辑的树形面板。Right-click any element to format its JSON.">
+<link rel="icon" href="assets/icon128.png">
+<style>
+  :root { --bg: #f6f8fb; --card: #fff; --fg: #1f2328; --muted: #6b7280; --border: #e3e6ea; --accent: #2f6fe4; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #141518; --card: #1e1f22; --fg: #d7dae0; --muted: #8b909a; --border: #33363c; --accent: #4c8bf5; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  header.hero { background: linear-gradient(135deg, #2f6fe4, #4c8bf5 60%, #6aa6ff); color: #fff; padding: 56px 0 48px; }
+  .hero .wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .hero img { width: 84px; height: 84px; border-radius: 20px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .hero h1 { margin: 0; font-size: 34px; }
+  .hero p { margin: 6px 0 0; opacity: .95; }
+  .actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 8px 18px; border-radius: 20px; text-decoration: none; font-weight: 600; }
+  .btn.primary { background: #fff; color: #2f6fe4; }
+  .btn.ghost { color: #fff; border: 1px solid rgba(255,255,255,.6); }
+  .lang { margin-left: auto; align-self: flex-start; }
+  .lang button { background: rgba(255,255,255,.18); color: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: 14px; padding: 3px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+  section { padding: 40px 0 8px; }
+  h2 { font-size: 22px; margin: 0 0 16px; }
+  .features { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .f { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .f b { display: block; margin-bottom: 4px; }
+  .f span { color: var(--muted); font-size: 14px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; }
+  .shots figure { margin: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .shots img { display: block; width: 100%; height: auto; }
+  .shots figcaption { padding: 8px 12px; font-size: 14px; color: var(--muted); }
+  .sponsor { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; }
+  .sponsor p { color: var(--muted); margin: 0 0 18px; }
+  .codes { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .code { width: 232px; padding: 12px 12px 10px; border-radius: 16px; color: #fff; }
+  .code img { display: block; width: 208px; height: 222px; object-fit: contain; border-radius: 10px; background: #fff; }
+  .code div { margin-top: 8px; font-weight: 600; }
+  .intl { margin-top: 18px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .intl a { padding: 4px 14px; border: 1px solid var(--border); border-radius: 16px; text-decoration: none; }
+  footer { padding: 32px 0 48px; color: var(--muted); font-size: 13px; text-align: center; }
+  [data-lang="en"] .zh, [data-lang="zh"] .en { display: none; }
+</style>
+</head>
+<body data-lang="zh">
+<header class="hero">
+  <div class="wrap">
+    <img src="assets/icon128.png" alt="">
+    <div>
+      <h1><span class="zh">JSON 节点格式化</span><span class="en">JSON Node Formatter</span></h1>
+      <p class="zh">右键页面任意节点，一键格式化其中的 JSON：可折叠、可搜索、可编辑，支持校验、对比、JSONPath、值解码与类型生成。所有处理都在本地完成。</p>
+      <p class="en">Right-click any element to turn its JSON into a collapsible, searchable, editable tree — with validation, diff, JSONPath, value decoding and type generation. Everything runs locally.</p>
+      <div class="actions">
+        <!-- TODO：上架后把 href 换成商店地址 https://chromewebstore.google.com/detail/<扩展 ID> -->
+        <a class="btn primary" id="storeLink" href="#"><span class="zh">添加到 Chrome</span><span class="en">Add to Chrome</span></a>
+        <a class="btn ghost" href="#sponsor">☕ <span class="zh">请作者喝杯咖啡</span><span class="en">Buy me a coffee</span></a>
+      </div>
+    </div>
+    <div class="lang"><button type="button" id="langBtn">English</button></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <h2><span class="zh">功能</span><span class="en">Features</span></h2>
+    <div class="features">
+      <div class="f"><b class="zh">右键即格式化</b><b class="en">Right-click to format</b><span class="zh">自动找到完整 JSON 节点，兼容 JSONP、转义、双重编码</span><span class="en">Finds the full JSON node; handles JSONP, escaping and double encoding</span></div>
+      <div class="f"><b class="zh">多面板并排</b><b class="en">Side-by-side panels</b><span class="zh">固定面板、拖动移开，源节点高亮与定位</span><span class="en">Pin, move panels away, highlight and locate the source element</span></div>
+      <div class="f"><b class="zh">搜索 / JSONPath</b><b class="en">Search / JSONPath</b><span class="zh">正则搜索、过滤分支、过滤表达式查询</span><span class="en">Regex search, branch filtering, filter expressions</span></div>
+      <div class="f"><b class="zh">值智能解码</b><b class="en">Smart decoding</b><span class="zh">时间戳、JWT、Base64、URL 编码、嵌套 JSON，可编辑并自动重新编码</span><span class="en">Timestamps, JWT, Base64, URL encoding, nested JSON — editable and re-encoded</span></div>
+      <div class="f"><b class="zh">校验与修复</b><b class="en">Validate & repair</b><span class="zh">错误位置红色高亮，单引号 / 注释 / 尾逗号一键修复</span><span class="en">Errors highlighted in red; fix single quotes, comments, trailing commas</span></div>
+      <div class="f"><b class="zh">对比 · 表格 · 类型</b><b class="en">Diff · Table · Types</b><span class="zh">两个任务做 Diff，对象数组表格化，生成 TS / Kotlin / ArkTS 类型</span><span class="en">Diff two tasks, view arrays as tables, generate TS / Kotlin / ArkTS types</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="zh">截图</span><span class="en">Screenshots</span></h2>
+    <div class="shots">
+      <figure><img src="assets/02-multi-panels.jpg" alt="" loading="lazy"><figcaption class="zh">多面板并排</figcaption><figcaption class="en">Side-by-side panels</figcaption></figure>
+      <figure><img src="assets/18-decode-edit.jpg" alt="" loading="lazy"><figcaption class="zh">编辑解码后的值、调色板</figcaption><figcaption class="en">Editing decoded values and the color picker</figcaption></figure>
+      <figure><img src="assets/08-search.jpg" alt="" loading="lazy"><figcaption class="zh">搜索并过滤</figcaption><figcaption class="en">Search and filter</figcaption></figure>
+      <figure><img src="assets/12-diff.jpg" alt="" loading="lazy"><figcaption class="zh">两次返回对比</figcaption><figcaption class="en">Diff between two responses</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="sponsor">
+    <div class="sponsor">
+      <h2>☕ <span class="zh">请作者喝杯咖啡</span><span class="en">Buy me a coffee</span></h2>
+      <p class="zh">插件完全免费，不收集任何数据。如果它帮你省下了时间，欢迎请作者喝杯咖啡，金额随意。</p>
+      <p class="en">The extension is free and collects no data. If it saves you time, any support is appreciated.</p>
+      <div class="codes">
+        <div class="code" style="background:#1677ff"><img src="assets/alipay.jpg" alt="Alipay"><div><span class="zh">支付宝</span><span class="en">Alipay</span></div></div>
+        <div class="code" style="background:#07c160"><img src="assets/wechat.jpg" alt="WeChat Pay"><div><span class="zh">微信支付</span><span class="en">WeChat Pay</span></div></div>
+      </div>
+      <div class="intl">
+        <span class="zh">海外用户：</span><span class="en">International:</span>
+        <a href="https://ko-fi.com/chestershen" target="_blank" rel="noopener">☕ Ko-fi（PayPal / Card）</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <a href="privacy.html"><span class="zh">隐私政策</span><span class="en">Privacy Policy</span></a>
+</footer>
+<script>
+  const btn = document.getElementById('langBtn');
+  const set = (l) => {
+    document.body.dataset.lang = l;
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    btn.textContent = l === 'zh' ? 'English' : '中文';
+  };
+  set(/^zh/i.test(navigator.language) && !/[?&]lang=en/.test(location.search) ? 'zh' : 'en');
+  btn.addEventListener('click', () => set(document.body.dataset.lang === 'zh' ? 'en' : 'zh'));
+</script>
+</body>
+</html>
